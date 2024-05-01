@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <div class="form mt-2 d-none" action="">
+        <div class="input-group mb-2">
+          <span class="input-group-text">帳號</span>
+          <input type="text" name="account" class="form-control">
+        </div>
+        <div class="input-group mb-2">
+          <span class="input-group-text">密碼</span>
+          <input type="password" name="password" class="form-control">
+        </div>
+        <div class="d-flex">
+          <div class="btn btn-primary ms-auto btn-login">送出</div>
+        </div>
+      </div>
+      <div class="main d-none">
+        <h1>NAME HERE</h1>
+        <section class="user mb-3">
+          <div class="head">
+            <img src="" alt="head img here">
+          </div>
+          <div class="account fs-3">account here</div>
+          <div class="mail">mail here</div>
+          <div class="d-flex">
+            <div class="btn btn-primary ms-auto btn-logout">登出</div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+    <script>
+      const secretKey = "YOUR_SECRET_KEY_HERE";
+      const btnLogin = document.querySelector(".btn-login");
+      const btnLogout = document.querySelector(".btn-logout");
+      const divForm = document.querySelector(".form");
+      const divMain = document.querySelector(".main");
+      const divH1 = document.querySelector(".main h1");
+      const divAccount = document.querySelector(".main .account");
+      const divMail = document.querySelector(".main .mail");
+      const divHead = document.querySelector(".main .head img");
+      const API_status = "http://localhost:3000/api/users/status";
+      const API_login = "http://localhost:3000/api/users/login";
+      const API_logout = "http://localhost:3000/api/users/logout";
+      const appKey = "login2_token_page2";
+      let token, user;
+
+      btnLogin.addEventListener("click", async e => {
+        const formData = new FormData();
+        formData.append("account", document.querySelector("[name=account]").value);
+        formData.append("password", document.querySelector("[name=password]").value);
+        let msg = "發生錯誤";
+        let data = await axios.post(API_login, formData).then(response => {
+          console.log(response);
+          return response.data;
+        }).catch(error => {
+          console.log(error);
+          return undefined;
+        })
+        if(data && data.status === "success"){
+          token = data.token;
+          user = jwt_decode(token);
+          localStorage.setItem(appKey, token);
+          setMain();
+        }else{
+          if(data){
+            msg = data.message;
+          }
+          alert(msg);
+        }
+      });
+      btnLogout.addEventListener("click", async e => {
+        let msg = "";
+        token = localStorage.getItem(appKey);
+        let data = await axios.post(API_logout, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }).then(response => response.data).catch(error => {
+          console.log(error);
+          return undefined
+        });
+        if(data && data.status === "success"){
+          token = data.token;
+          user = jwt_decode(token);
+          localStorage.setItem(appKey, token);
+          setForm();
+        }else{
+          if(data){
+            msg = data.message;
+          }
+          alert(msg);
+          setForm();
+        }
+      });
+
+      init();
+
+      async function init(){
+        let msg = "";
+        token = localStorage.getItem(appKey);
+        let data = await axios.get(API_status, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }).then(response => response.data).catch(error => {
+          console.log(error);
+          msg = (error.message)?error.message:"錯誤產生";
+          return undefined
+        });
+        if(data && data.status === "success"){
+          token = data.token;
+          user = jwt_decode(token);
+          localStorage.setItem(appKey, token);
+          setMain();
+        }else{
+          if(data){
+            msg = data.message;
+          }
+          alert(msg);
+          setForm();
+        }
+      }
+      function setForm(){
+        divH1.innerHTML = "";
+        divAccount.innerHTML = "";
+        divMail.innerHTML = "";
+        divHead.setAttribute("src", "");
+        divForm.classList.remove("d-none");
+        divMain.classList.add("d-none");
+      }
+      function setMain(){
+        divH1.innerHTML = user.name;
+        divAccount.innerHTML = user.account;
+        divMail.innerHTML = user.mail;
+        divHead.setAttribute("src", user.head);
+        divForm.classList.add("d-none");
+        divMain.classList.remove("d-none");
+      }
+    </script>
+  </body>
+</html>

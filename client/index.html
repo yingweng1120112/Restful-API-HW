@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <div class="form mt-2 d-none" action="">
+        <div class="input-group mb-2">
+          <span class="input-group-text">帳號</span>
+          <input type="text" name="account" class="form-control">
+        </div>
+        <div class="input-group mb-2">
+          <span class="input-group-text">密碼</span>
+          <input type="password" name="password" class="form-control">
+        </div>
+        <div class="d-flex">
+          <div class="btn btn-primary ms-auto btn-login">送出</div>
+        </div>
+      </div>
+      <div class="main d-none">
+        <h1>NAME HERE</h1>
+        <section class="user mb-3">
+          <div class="head">
+            <img src="" alt="head img here">
+          </div>
+          <div class="account fs-3">account here</div>
+          <div class="mail">mail here</div>
+          <div class="d-flex">
+            <div class="btn btn-primary ms-auto btn-logout">登出</div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script>
+      const secretKey = "YOUR_SECRET_KEY_HERE";
+      const btnLogin = document.querySelector(".btn-login");
+      const btnLogout = document.querySelector(".btn-logout");
+      const divFrom = document.querySelector(".form");
+      const divMain = document.querySelector(".main");
+      const divH1 = document.querySelector(".main h1");
+      const divAccount = document.querySelector(".main .account");
+      const divMail = document.querySelector(".main .mail");
+      const divHead = document.querySelector(".main .head img");
+      const API_status = "http://localhost:3000/api/users/status";
+      const API_login = "http://localhost:3000/api/users/login";
+      const API_logout = "http://localhost:3000/api/users/logout";
+      const appKey = "login2_token";
+      let token, user;
+
+      btnLogin.addEventListener("click", e => {
+        const formData = new FormData();
+        formData.append("account", document.querySelector("[name=account]").value);
+        formData.append("password", document.querySelector("[name=password]").value);
+        fetch(API_login, {
+          method: "POST",
+          body: formData
+        }).then(response => response.json()).then(result => {
+          console.log(result);
+          if(result.status === "success"){
+            token = result.token;
+            user = jwt_decode(token);
+            localStorage.setItem(appKey, token);
+            setMain();
+          }else{
+            setForm();
+          }
+        }).catch(error => {
+          console.log(error);
+        });
+      });
+      btnLogout.addEventListener("click", e => {
+        token = localStorage.getItem(appKey);
+        fetch(API_logout, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }).then(response => response.json()).then(result => {
+          if(result.status === "success"){
+            token = result.token;
+            user = jwt_decode(token);
+            localStorage.setItem(appKey, token);
+            setForm();
+          }else{
+            setForm();
+          }
+        }).catch(error => {
+          console.log(error);
+        });
+      });
+
+      init();
+
+      function init(){
+        token = localStorage.getItem(appKey);
+        fetch(API_status, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }).then(response => response.json()).then(result => {
+          if(result.status === "success"){
+            token = result.token;
+            user = jwt_decode(token);
+            localStorage.setItem(appKey, token);
+            setMain();
+          }else{
+            setForm();
+          }
+        }).catch(error => {
+          console.log(error);
+        });
+      }
+      function setForm(){
+        divH1.innerHTML = "";
+        divAccount.innerHTML = "";
+        divMail.innerHTML = "";
+        divHead.setAttribute("src", "");
+        divFrom.classList.remove("d-none");
+        divMain.classList.add("d-none");
+      }
+      function setMain(){
+        divH1.innerHTML = user.name;
+        divAccount.innerHTML = user.account;
+        divMail.innerHTML = user.mail;
+        divHead.setAttribute("src", user.head);
+        divFrom.classList.add("d-none");
+        divMain.classList.remove("d-none");
+      }
+    </script>
+  </body>
+</html>
