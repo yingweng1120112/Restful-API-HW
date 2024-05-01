@@ -40,15 +40,15 @@ app.get("/", (req, res) => {
 
 // 獲取所有產品
 app.get(" /api/products/", async (req, res) => {
-    // let users, error;
-    // users = await usersAll().then(result => result).catch(err => {
-    //     error = err;
-    //     return undefined;
-    // });
-    // if (error) {
-    //     res.status(404).json({ status: "error", message: error.message });
-    //     return false;
-    // }
+    let users, error;
+    users = await usersAll().then(result => result).catch(err => {
+        error = err;
+        return undefined;
+    });
+    if (error) {
+        res.status(404).json({ status: "error", message: error.message });
+        return false;
+    }
     res.status(200).json({ status: "success", users });
 });
 
